@@ -64,7 +64,7 @@ export const LoginPage = () => {
         if (error) {
             let errorText = error.message;
             if (errorText.includes('provider is not enabled')) {
-                errorText = `${provider === 'google' ? 'Google' : 'Kakao'} 로그인이 아직 활성화되지 않았습니다. 프로젝트 폴더의 'AUTH_SOCIAL_SETUP.md' 파일을 참고하여 Supabase 설정을 완료해 주세요.`;
+                errorText = `Google 로그인이 아직 활성화되지 않았습니다. 프로젝트 폴더의 'AUTH_SOCIAL_SETUP.md' 파일을 참고하여 Supabase 설정을 완료해 주세요.`;
             }
             setMessage({ type: 'error', text: errorText });
         }

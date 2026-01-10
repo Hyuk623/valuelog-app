@@ -18,6 +18,7 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
             onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
             signInWithPassword: async () => ({ error: new Error('Supabase configuration missing') }),
             signUp: async () => ({ error: new Error('Supabase configuration missing') }),
+            signInWithOAuth: async () => ({ error: new Error('Supabase configuration missing') }),
         },
         from: () => ({
             select: () => ({
