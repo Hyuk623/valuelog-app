@@ -64,7 +64,7 @@ export const LoginPage = () => {
         if (error) {
             let errorText = error.message;
             if (errorText.includes('provider is not enabled')) {
-                errorText = `${provider === 'google' ? 'Google' : 'Kakao'} 로그인이 아직 활성화되지 않았습니다. Supabase 대시보드에서 설정을 확인해 주세요.`;
+                errorText = `${provider === 'google' ? 'Google' : 'Kakao'} 로그인이 아직 활성화되지 않았습니다. 프로젝트 폴더의 'AUTH_SOCIAL_SETUP.md' 파일을 참고하여 Supabase 설정을 완료해 주세요.`;
             }
             setMessage({ type: 'error', text: errorText });
         }
@@ -111,17 +111,6 @@ export const LoginPage = () => {
                                 {isSignUp ? '간편 회원가입' : '간편 로그인'}
                             </h2>
                             <div className="flex flex-col gap-2">
-                                <Button
-                                    variant="outline"
-                                    fullWidth
-                                    onClick={() => handleSocialLogin('kakao')}
-                                    className="bg-[#FEE500] border-none text-[#191919] hover:bg-[#FADA0A] h-12 text-base font-bold"
-                                >
-                                    <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 3C6.47715 3 2 6.47715 2 10.75C2 12.8164 2.92842 14.671 4.43675 16.0374C4.1627 17.5147 3.49122 19.3402 3.40742 19.5694C3.32362 19.7986 3.53508 19.8516 3.66571 19.7891C4.85328 19.2155 7.15197 17.6534 8.07727 17.0264L8.07727 17.0263C9.30396 17.558 10.619 17.8571 12 17.8571C17.5228 17.8571 22 14.3799 22 10.1071C22 5.83437 17.5228 2.35714 12 2.35714L12 3Z" />
-                                    </svg>
-                                    카카오로 3초만에 시작하기
-                                </Button>
                                 <Button
                                     variant="outline"
                                     fullWidth
