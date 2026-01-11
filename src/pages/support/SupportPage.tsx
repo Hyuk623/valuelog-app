@@ -14,6 +14,7 @@ export const SupportPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        alert('문의 전송을 시작합니다...'); // Diagnostic alert
         if (!user) {
             alert('로그인이 필요합니다.');
             return;
