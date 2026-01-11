@@ -76,6 +76,7 @@ export const SupportPage = () => {
                     소중한 의견 감사드립니다.<br />
                     최대한 빨리 확인 후 답변 드리겠습니다.
                 </p>
+                <div className="text-[10px] text-gray-300 mb-4 font-mono">Ver: 1.0.2-diag</div>
                 <Button
                     onClick={() => setIsSubmitted(false)}
                     variant="outline"
