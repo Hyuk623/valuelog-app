@@ -23,7 +23,7 @@ export const SupportPage = () => {
         setIsSubmitting(true);
         try {
             console.log('Sending inquiry:', { user_id: user.id, email: user.email, subject, message });
-            const { error } = await supabase
+            const { data: insertData, error: insertError } = await supabase
                 .from('support_inquiries')
                 .insert([
                     {
@@ -33,12 +33,21 @@ export const SupportPage = () => {
                         message,
                         status: 'open'
                     }
-                ]);
+                ])
+                .select(); // Fetch back the inserted row
 
-            if (error) {
-                console.error('Supabase Error:', error);
-                throw error;
+            if (insertError) {
+                console.error('Supabase Insert Error:', insertError);
+                throw insertError;
             }
+
+            console.log('Insert successful, verifying:', insertData);
+
+            if (!insertData || insertData.length === 0) {
+                throw new Error('데이터가 저장된 것으로 표시되었으나, 실제 확인 결과 데이터가 비어있습니다. RLS 정책을 확인해 주세요.');
+            }
+
+            alert(`데이터가 성공적으로 서버에 기록되었습니다 (ID: ${insertData[0].id}).\n대시보드에서 새로고침을 해주세요.`);
             setIsSubmitted(true);
         } catch (err: any) {
             console.error('Support submission failed:', err);
