@@ -1,67 +1,99 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import type { Child } from '../types/models';
 import { useAuth } from './useAuth';
+import { logError, getErrorMessage } from '../utils/errorUtils';
 
 export function useChildren() {
     const { user } = useAuth();
     const [children, setChildren] = useState<Child[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const hasFetched = useRef(false);
 
-    useEffect(() => {
+    const fetchChildren = useCallback(async () => {
         if (!user) {
-            if (loading) {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setLoading(false);
-            }
+            setLoading(false);
             return;
         }
 
-        async function fetchChildren() {
-            const { data, error } = await supabase
+        setLoading(true);
+        setError(null);
+        try {
+            const { data, error: supabaseError } = await supabase
                 .from('children')
-                .select('*')
+                .select('id, name, birth_date, created_at')
                 .order('created_at', { ascending: true });
 
-            if (error) {
-                console.error(error);
+            if (supabaseError) {
+                logError(supabaseError, 'fetchChildren');
+                setError(getErrorMessage(supabaseError, '아이 목록을 불러오는 중 오류가 발생했습니다.'));
             } else {
                 setChildren(data || []);
+                hasFetched.current = true;
             }
+        } catch (err) {
+            logError(err, 'fetchChildren unexpected');
+            setError('아이 목록을 불러오는 중 예상치 못한 오류가 발생했습니다.');
+        } finally {
             setLoading(false);
         }
+    }, [user]);
 
-        fetchChildren();
-    }, [user, loading]);
-
-    const addChild = async (name: string, birthDate: string | null) => {
-        if (!user) {
-            console.error('User not authenticated');
-            throw new Error('로그인이 필요합니다.');
+    useEffect(() => {
+        if (user && !hasFetched.current) {
+            fetchChildren();
+        } else if (!user) {
+            setChildren([]);
+            setLoading(false);
+            hasFetched.current = false;
         }
+    }, [user, fetchChildren]);
 
-        console.log('Adding child:', { name, birthDate, userId: user.id });
+    const addChild = useCallback(async (name: string, birthDate: string | null) => {
+        if (!user) throw new Error('로그인이 필요합니다.');
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase as any)
+        const { data, error: supabaseError } = await supabase
             .from('children')
             .insert({
                 user_id: user.id,
-                name: name,
+                name: name.trim(),
                 birth_date: birthDate || null,
             })
             .select()
             .single();
 
-        if (error) {
-            console.error('Supabase error adding child:', error);
-            throw error;
+        if (supabaseError) {
+            logError(supabaseError, 'addChild');
+            throw new Error(getErrorMessage(supabaseError, '아이 등록에 실패했습니다.'));
         }
 
-        console.log('Child added successfully:', data);
         if (data) setChildren(prev => [...prev, data]);
-        return data;
-    };
+        return data as Child;
+    }, [user]);
 
-    return { children, loading, addChild };
+    const deleteChild = useCallback(async (id: string) => {
+        if (!user) throw new Error('로그인이 필요합니다.');
+
+        const { error: supabaseError } = await supabase
+            .from('children')
+            .delete()
+            .eq('id', id);
+
+        if (supabaseError) {
+            logError(supabaseError, 'deleteChild');
+            throw new Error(getErrorMessage(supabaseError, '아이 삭제에 실패했습니다.'));
+        }
+
+        setChildren(prev => prev.filter(c => c.id !== id));
+    }, [user]);
+
+    return {
+        children,
+        loading,
+        error,
+        addChild,
+        deleteChild,
+        refresh: fetchChildren
+    };
 }
