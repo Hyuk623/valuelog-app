@@ -5,6 +5,8 @@ import { supabase } from '../../lib/supabaseClient';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
+import { Modal } from '../../components/ui/Modal';
+import { TERMS_OF_SERVICE, PRIVACY_POLICY } from '../../constants/legalDocuments';
 
 export const LoginPage = () => {
     const navigate = useNavigate();
@@ -13,6 +15,8 @@ export const LoginPage = () => {
     const [loading, setLoading] = useState(false);
     const [isSignUp, setIsSignUp] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [showTerms, setShowTerms] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
 
     const handleLogin = async (e: FormEvent) => {
         e.preventDefault();
@@ -166,10 +170,31 @@ export const LoginPage = () => {
                     </div>
 
                     <p className="mt-8 text-center text-[11px] text-gray-400 px-4 leading-relaxed">
-                        계속 진행함으로써 ValueLog의 <span className="underline cursor-pointer">이용약관</span> 및 <span className="underline cursor-pointer">개인정보처리방침</span>에 동의하게 됩니다.
+                        계속 진행함으로써 ValueLog의 <span onClick={() => setShowTerms(true)} className="underline cursor-pointer hover:text-gray-600 transition-colors">이용약관</span> 및 <span onClick={() => setShowPrivacy(true)} className="underline cursor-pointer hover:text-gray-600 transition-colors">개인정보처리방침</span>에 동의하게 됩니다.
                     </p>
                 </div>
             </Card>
+
+            {/* Legal Modals */}
+            <Modal
+                isOpen={showTerms}
+                onClose={() => setShowTerms(false)}
+                title="이용약관"
+            >
+                <div className="space-y-4 whitespace-pre-wrap">
+                    {TERMS_OF_SERVICE}
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={showPrivacy}
+                onClose={() => setShowPrivacy(false)}
+                title="개인정보처리방침"
+            >
+                <div className="space-y-4 whitespace-pre-wrap">
+                    {PRIVACY_POLICY}
+                </div>
+            </Modal>
         </div>
     );
 };
