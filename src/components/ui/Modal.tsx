@@ -39,7 +39,7 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
             {/* Modal Content */}
             <div className={cn(
                 "relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]",
-                "animate-in fade-in zoom-in duration-300"
+                "transform transition-all duration-300 scale-100 opacity-100"
             )}>
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">

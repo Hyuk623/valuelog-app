@@ -169,8 +169,24 @@ export const LoginPage = () => {
                         </form>
                     </div>
 
-                    <p className="mt-8 text-center text-[11px] text-gray-400 px-4 leading-relaxed">
-                        계속 진행함으로써 ValueLog의 <span onClick={() => setShowTerms(true)} className="underline cursor-pointer hover:text-gray-600 transition-colors">이용약관</span> 및 <span onClick={() => setShowPrivacy(true)} className="underline cursor-pointer hover:text-gray-600 transition-colors">개인정보처리방침</span>에 동의하게 됩니다.
+                    <p className="mt-8 text-center text-[11px] text-gray-400 px-4 leading-relaxed flex flex-wrap justify-center gap-1">
+                        <span>계속 진행함으로써 ValueLog의</span>
+                        <button
+                            type="button"
+                            onClick={() => setShowTerms(true)}
+                            className="underline cursor-pointer hover:text-gray-600 transition-colors font-medium focus:outline-none"
+                        >
+                            이용약관
+                        </button>
+                        <span>및</span>
+                        <button
+                            type="button"
+                            onClick={() => setShowPrivacy(true)}
+                            className="underline cursor-pointer hover:text-gray-600 transition-colors font-medium focus:outline-none"
+                        >
+                            개인정보처리방침
+                        </button>
+                        <span>에 동의하게 됩니다.</span>
                     </p>
                 </div>
             </Card>
