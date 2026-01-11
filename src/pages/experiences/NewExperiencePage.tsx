@@ -383,8 +383,16 @@ export const NewExperiencePage = () => {
                                                 placeholder={preset?.placeholder || q.label}
                                             />
                                             <div className="flex justify-between px-1 items-center">
-                                                {fieldError ? <p className="text-[10px] text-red-500 font-bold">{fieldError}</p> : <div />}
-                                                <span className={`text-[10px] font-bold ${value.length > 800 ? 'text-red-500' : 'text-gray-300'}`}>{value.length}/800</span>
+                                                {fieldError ? (
+                                                    <p className="text-[10px] text-red-500 font-bold">{fieldError}</p>
+                                                ) : (
+                                                    <p className={`text-[10px] font-bold ${value.length < 100 ? 'text-indigo-300' : 'text-emerald-500'}`}>
+                                                        {value.length < 100 ? '💡 최소 100자 이상 작성을 권장합니다' : '✨ 양질의 기록이 작성되었습니다'}
+                                                    </p>
+                                                )}
+                                                <span className={`text-[10px] font-bold ${value.length > 800 ? 'text-red-500' : (value.length >= 100 ? 'text-emerald-500' : 'text-gray-300')}`}>
+                                                    {value.length}/800
+                                                </span>
                                             </div>
                                         </div>
                                     );

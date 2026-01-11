@@ -34,8 +34,8 @@ export const NewChildPage = () => {
         // Birth year validation: 1995-2025
         if (birthDate) {
             const year = new Date(birthDate).getFullYear();
-            if (year < 1995 || year > 2025) {
-                newErrors.birthDate = '출생연도는 1995년부터 2025년 사이여야 합니다.';
+            if (year > 2025) {
+                newErrors.birthDate = '출생연도는 2025년까지 선택 가능합니다.';
             }
         }
 
