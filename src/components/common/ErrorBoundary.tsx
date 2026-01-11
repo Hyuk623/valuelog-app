@@ -1,6 +1,9 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import { AlertCircle, RefreshCcw, Settings } from 'lucide-react';
+// import { AlertCircle, RefreshCcw, Settings } from 'lucide-react';
+const AlertCircle = () => null;
+const RefreshCcw = () => null;
+const Settings = () => null;
 import { Button } from '../ui/Button';
 import { IS_SUPABASE_CONFIGURED } from '../../lib/supabaseClient';
 
