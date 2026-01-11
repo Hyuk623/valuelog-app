@@ -1,10 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-// import { Home, Compass, PlusCircle, BarChart2, MessageCircle } from 'lucide-react';
-const Home = () => null;
-const Compass = () => null;
-const PlusCircle = () => null;
-const BarChart2 = () => null;
-const MessageCircle = () => null;
+import { Home, Compass, PlusCircle, BarChart2, MessageCircle } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
