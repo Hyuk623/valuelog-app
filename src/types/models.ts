@@ -49,3 +49,13 @@ export interface Experience {
     image_url: string | null;
     created_at: string;
 }
+
+export interface SupportInquiry {
+    id: string;
+    user_id: string;
+    email: string;
+    subject: string;
+    message: string;
+    status: 'open' | 'in_progress' | 'resolved' | 'closed';
+    created_at: string;
+}
