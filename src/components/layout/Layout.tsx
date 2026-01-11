@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Home, Compass, PlusCircle, BarChart2 } from 'lucide-react';
+import { Home, Compass, PlusCircle, BarChart2, MessageCircle } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -91,6 +91,19 @@ const Layout = () => {
                     >
                         <BarChart2 className="w-5 h-5" />
                         <span className="text-[10px] mt-1 font-medium">통계</span>
+                    </NavLink>
+
+                    <NavLink
+                        to="/support"
+                        className={({ isActive }) =>
+                            cn(
+                                'flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-200',
+                                isActive ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:bg-gray-50'
+                            )
+                        }
+                    >
+                        <MessageCircle className="w-5 h-5" />
+                        <span className="text-[10px] mt-1 font-medium">문의</span>
                     </NavLink>
                 </nav>
             </main>

@@ -3,17 +3,8 @@ import Layout from './components/layout/Layout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ChildrenPage } from './pages/children/ChildrenPage';
 import { NewChildPage } from './pages/children/NewChildPage';
-import { FrameworksPage } from './pages/frameworks/FrameworksPage';
-
-// Experiences
-import { ExperienceListPage } from './pages/experiences/ExperienceListPage';
-import { NewExperiencePage } from './pages/experiences/NewExperiencePage';
-import { EditExperiencePage } from './pages/experiences/EditExperiencePage';
 import { ExperienceDetailPage } from './pages/experiences/ExperienceDetailPage';
-
-// Stats
 import { StatsPage } from './pages/stats/StatsPage';
-
 import { useAuth } from './hooks/useAuth';
 
 function App() {
@@ -44,12 +35,11 @@ function App() {
           <Route path="/children" element={<ChildrenPage />} />
           <Route path="/children/new" element={<NewChildPage />} />
 
-          <Route path="/experiences" element={<ExperienceListPage />} />
-          <Route path="/experiences/new" element={<NewExperiencePage />} />
+          <Route path="/experiences" element={<div />} />
+          <Route path="/experiences/new" element={<div />} />
           <Route path="/experiences/:id" element={<ExperienceDetailPage />} />
-          <Route path="/experiences/:id/edit" element={<EditExperiencePage />} />
 
-          <Route path="/frameworks" element={<FrameworksPage />} />
+          <Route path="/frameworks" element={<div />} />
           <Route path="/stats" element={<StatsPage />} />
         </Route>
 

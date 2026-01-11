@@ -72,6 +72,28 @@ export function useChildren() {
         return data as Child;
     }, [user]);
 
+    const updateChild = useCallback(async (id: string, name: string, birthDate: string | null) => {
+        if (!user) throw new Error('로그인이 필요합니다.');
+
+        const { data, error: supabaseError } = await supabase
+            .from('children')
+            .update({
+                name: name.trim(),
+                birth_date: birthDate || null,
+            })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (supabaseError) {
+            logError(supabaseError, 'updateChild');
+            throw new Error(getErrorMessage(supabaseError, '아이 정보 수정에 실패했습니다.'));
+        }
+
+        if (data) setChildren(prev => prev.map(c => c.id === id ? data : c));
+        return data as Child;
+    }, [user]);
+
     const deleteChild = useCallback(async (id: string) => {
         if (!user) throw new Error('로그인이 필요합니다.');
 
@@ -93,6 +115,7 @@ export function useChildren() {
         loading,
         error,
         addChild,
+        updateChild,
         deleteChild,
         refresh: fetchChildren
     };
