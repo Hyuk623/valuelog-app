@@ -11,6 +11,7 @@ export const SupportPage = () => {
     const [message, setMessage] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submittedId, setSubmittedId] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,20 +34,18 @@ export const SupportPage = () => {
                         status: 'open'
                     }
                 ])
-                .select(); // Fetch back the inserted row
+                .select();
 
             if (insertError) {
                 console.error('Supabase Insert Error:', insertError);
                 throw insertError;
             }
 
-            console.log('Insert successful, verifying:', insertData);
-
             if (!insertData || insertData.length === 0) {
-                throw new Error('데이터가 저장된 것으로 표시되었으나, 실제 확인 결과 데이터가 비어있습니다. RLS 정책을 확인해 주세요.');
+                throw new Error('데이터가 저장되었으나 결과를 확인할 수 없습니다.');
             }
 
-            alert(`데이터가 성공적으로 서버에 기록되었습니다 (ID: ${insertData[0].id}).\n대시보드에서 새로고침을 해주세요.`);
+            setSubmittedId(insertData[0].id);
             setIsSubmitted(true);
         } catch (err: any) {
             console.error('Support submission failed:', err);
@@ -76,7 +75,12 @@ export const SupportPage = () => {
                     소중한 의견 감사드립니다.<br />
                     최대한 빨리 확인 후 답변 드리겠습니다.
                 </p>
-                <div className="text-[10px] text-gray-300 mb-4 font-mono">Ver: 1.0.2-diag</div>
+                {submittedId && (
+                    <div className="text-[10px] text-gray-400 mb-4 font-mono opacity-50">
+                        Inquiry ID: {submittedId}
+                    </div>
+                )}
+                <div className="text-[10px] text-gray-300 mb-4 font-mono">Ver: 1.0.3-stable</div>
                 <Button
                     onClick={() => setIsSubmitted(false)}
                     variant="outline"
