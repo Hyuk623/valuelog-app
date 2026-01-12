@@ -9,5 +9,15 @@ export default defineConfig({
     sourcemap: false,
     target: 'esnext',
     minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['lucide-react'],
+          charts: ['recharts'],
+        },
+      },
+    },
   }
 })
