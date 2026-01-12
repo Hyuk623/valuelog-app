@@ -5,8 +5,10 @@ import { useChildren } from '../../hooks/useChildren';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Plus, Filter, Calendar, MapPin, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Filter, Calendar, MapPin, AlertCircle, RefreshCw } from 'lucide-react';
 import type { Experience } from '../../types/models';
+
+import { ChildSelectorSimple as ChildSelector } from '../../components/ui/ChildSelector';
 
 export const ExperienceListPage = () => {
     const navigate = useNavigate();
@@ -38,6 +40,13 @@ export const ExperienceListPage = () => {
 
     const activeChild = children.find(c => c.id === activeChildId);
 
+    // Add 'All' option for the selector
+    const selectorChildren = [
+        { id: '', name: '전체 보기', user_id: '', created_at: '', birth_date: '' },
+        ...children
+    ];
+    const currentSelectorChild = activeChild || selectorChildren[0];
+
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] p-6 text-center">
@@ -55,36 +64,67 @@ export const ExperienceListPage = () => {
 
     return (
         <div className="space-y-6 pb-24 max-w-[420px] mx-auto p-4">
-            <header className="flex justify-between items-end px-1">
-                <div>
-                    <h1 className="text-2xl font-black text-gray-900 leading-tight">경험 기록부</h1>
-                    <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-wider">
-                        {activeChild ? `${activeChild.name}의 활동 목록` : '모든 아이들의 활동 목록'}
-                    </p>
+            <header className="flex flex-col gap-6 px-2 pt-2">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">경험 기록부</h1>
+                        <p className="text-sm font-medium text-slate-400 mt-1">
+                            {activeChild ? `${activeChild.name}의 활동 아카이브` : '아이들의 모든 성장을 기록합니다'}
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => navigate(activeChildId ? `/experiences/new?child_id=${activeChildId}` : '/experiences/new')}
+                        className="rounded-2xl h-12 w-12 p-0 shadow-lg shadow-indigo-200/50 bg-indigo-600 hover:bg-indigo-700 hover:scale-105 transition-all shrink-0"
+                    >
+                        <Plus className="w-6 h-6 text-white" />
+                    </Button>
                 </div>
-                <Button onClick={() => navigate(activeChildId ? `/experiences/new?child_id=${activeChildId}` : '/experiences/new')} className="rounded-2xl h-12 w-12 p-0 shadow-lg shadow-indigo-100 shrink-0">
-                    <Plus className="w-6 h-6" />
-                </Button>
+
+                <div className="w-full">
+                    <ChildSelector
+                        children={selectorChildren as any}
+                        currentChild={currentSelectorChild as any}
+                        onSelect={(child) => {
+                            const params = new URLSearchParams(searchParams);
+                            if (child.id) {
+                                params.set('child_id', child.id);
+                            } else {
+                                params.delete('child_id');
+                            }
+                            setSearchParams(params);
+                        }}
+                    />
+                </div>
             </header>
 
-            <div className="space-y-4 sticky top-0 bg-gray-50/80 backdrop-blur-md py-2 z-10 px-1">
-                <Input
-                    placeholder="활동 제목, 유형 검색..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="bg-white border-none shadow-sm rounded-2xl h-12"
-                />
+            <div className="sticky top-0 bg-gray-50/95 backdrop-blur-xl py-4 z-20 px-2 -mx-2 space-y-3 transition-all border-b border-gray-100/50">
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Filter className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <Input
+                        placeholder="어떤 활동을 찾고 계신가요?"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="bg-white border-slate-200 shadow-sm rounded-2xl h-12 pl-10 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-700 placeholder:text-slate-400"
+                    />
+                </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <div className="flex gap-2 overflow-x-auto pb-2 pt-1 px-1 no-scrollbar mask-linear-fade">
                     <button
                         onClick={() => {
                             const params = new URLSearchParams(searchParams);
                             params.delete('category');
                             setSearchParams(params);
                         }}
-                        className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all ${!activeCategory ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}
+                        className={`
+                            px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition-all duration-200 border
+                            ${!activeCategory
+                                ? 'bg-slate-800 text-white border-slate-800 shadow-md shadow-slate-200 ring-2 ring-slate-100'
+                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}
+                        `}
                     >
-                        전체
+                        전체 보기
                     </button>
                     {categoryHistory.map((cat: string) => (
                         <button
@@ -94,7 +134,12 @@ export const ExperienceListPage = () => {
                                 params.set('category', cat);
                                 setSearchParams(params);
                             }}
-                            className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}
+                            className={`
+                                px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition-all duration-200 border
+                                ${activeCategory === cat
+                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100 ring-2 ring-indigo-50'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}
+                            `}
                         >
                             {cat}
                         </button>
@@ -102,60 +147,101 @@ export const ExperienceListPage = () => {
                 </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 px-1">
                 {(experiencesLoading || childrenLoading) ? (
                     [1, 2, 3].map(i => (
-                        <Card key={i} className="h-32 animate-pulse bg-gray-100" />
+                        <Card key={i} className="h-36 animate-pulse bg-white border-none shadow-sm rounded-[24px]" />
                     ))
                 ) : filteredExperiences.length > 0 ? (
                     filteredExperiences.map((exp: Experience) => (
                         <Card
                             key={exp.id}
                             padding={false}
-                            className="group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer rounded-[32px] border-none bg-white shadow-sm"
+                            className="group hover:shadow-xl hover:shadow-indigo-100/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 cursor-pointer rounded-[28px] border-none bg-white shadow-[0_2px_20px_-8px_rgba(0,0,0,0.06)] overflow-hidden"
                             onClick={() => navigate(`/experiences/${exp.id}`)}
                         >
-                            <div className="flex h-32">
-                                {exp.image_url ? (
-                                    <div className="w-32 h-full shrink-0">
-                                        <img src={exp.image_url} alt={exp.title} className="w-full h-full object-cover" />
-                                    </div>
-                                ) : (
-                                    <div className="w-32 h-full bg-indigo-50 shrink-0 flex items-center justify-center">
-                                        <Filter className="w-8 h-8 text-indigo-200" />
-                                    </div>
-                                )}
-                                <div className="flex-1 p-4 flex flex-col justify-between">
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="font-black text-gray-900 line-clamp-1 group-hover:text-indigo-600 transition-colors">{exp.title}</h3>
-                                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+                            <div className="flex min-h-[140px] sm:min-h-[100px]">
+                                {/* Image Section */}
+                                <div className="w-32 sm:w-40 shrink-0 relative overflow-hidden">
+                                    {exp.image_url ? (
+                                        <img
+                                            src={exp.image_url}
+                                            alt={exp.title}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-300">
+                                            <div className="p-3 bg-white rounded-2xl shadow-sm">
+                                                <Filter className="w-6 h-6 text-slate-200" />
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400">
-                                            <div className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {exp.date}</div>
-                                            {exp.location && <div className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {exp.location}</div>}
+                                    )}
+                                    {/* Type Badge Overlay */}
+                                    {exp.activity_type && (
+                                        <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-[10px] font-black text-slate-700 shadow-sm border border-white/50">
+                                            {exp.activity_type}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Content Section */}
+                                <div className="flex-1 p-5 flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex justify-between items-start gap-4 mb-2">
+                                            <h3 className="text-lg font-black text-slate-800 leading-snug line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                                                {exp.title}
+                                            </h3>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs font-bold text-slate-400 mb-3">
+                                            <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
+                                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                                <span>{exp.date}</span>
+                                            </div>
+                                            {exp.location && (
+                                                <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg max-w-[120px] truncate">
+                                                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                                    <span className="truncate">{exp.location}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap gap-1">
-                                        {exp.tags_category?.slice(0, 2).map((tag: string) => (
-                                            <span key={tag} className="px-2 py-0.5 bg-teal-50 text-teal-600 rounded-lg text-[10px] font-black">{tag}</span>
+
+                                    <div className="flex flex-wrap gap-1.5 mt-auto">
+                                        {exp.tags_category?.slice(0, 3).map((tag: string) => (
+                                            <span key={tag} className="px-2.5 py-1 bg-teal-50 text-teal-700 border border-teal-100/50 rounded-lg text-[10px] font-bold">
+                                                #{tag}
+                                            </span>
                                         ))}
                                         {exp.tags_competency?.slice(0, 2).map((tag: string) => (
-                                            <span key={tag} className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black">{tag}</span>
+                                            <span key={tag} className="px-2.5 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100/50 rounded-lg text-[10px] font-bold">
+                                                #{tag}
+                                            </span>
                                         ))}
+                                        {((exp.tags_category?.length || 0) + (exp.tags_competency?.length || 0)) === 0 && (
+                                            <span className="text-[10px] text-slate-300 font-medium px-1">태그 없음</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         </Card>
                     ))
                 ) : (
-                    <div className="py-12 text-center bg-white rounded-[32px] shadow-sm px-6">
-                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Filter className="w-8 h-8 text-gray-200" />
+                    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                        <div className="w-20 h-20 bg-indigo-50/50 rounded-full flex items-center justify-center mb-6 ring-8 ring-indigo-50/20">
+                            <Plus className="w-8 h-8 text-indigo-300" />
                         </div>
-                        <h3 className="text-lg font-black text-gray-900 mb-1">기록이 없습니다</h3>
-                        <p className="text-sm text-gray-400 mb-6 leading-relaxed">아이의 소중한 순간들을<br />기록하기 시작해 보세요.</p>
-                        <Button onClick={() => navigate('/experiences/new')} className="rounded-2xl px-8 font-black shadow-lg shadow-indigo-50">첫 기록 남기기</Button>
+                        <h3 className="text-xl font-black text-slate-900 mb-2">첫 번째 기록을 기다리고 있어요</h3>
+                        <p className="text-slate-500 mb-8 leading-relaxed max-w-[240px]">
+                            아이와 함께한 특별한 순간들을<br />
+                            하나씩 기록해 보세요.
+                        </p>
+                        <Button
+                            onClick={() => navigate(activeChildId ? `/experiences/new?child_id=${activeChildId}` : '/experiences/new')}
+                            className="rounded-2xl px-8 h-12 font-bold shadow-xl shadow-indigo-200/50 bg-indigo-600 hover:bg-indigo-700 hover:scale-105 transition-all text-white"
+                        >
+                            기록 시작하기
+                        </Button>
                     </div>
                 )}
             </div>

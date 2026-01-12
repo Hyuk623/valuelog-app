@@ -6,9 +6,13 @@ import {
     LabelList
 } from 'recharts';
 import { useExperiences } from '../../hooks/useExperiences';
+import { useCurrentChild } from '../../hooks/useCurrentChild';
+import { ChildSelectorSimple as ChildSelector } from '../../components/ui/ChildSelector';
 import { Card } from '../../components/ui/Card';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
+
+// ... (Tooltip interfaces remain same)
 
 interface CustomTooltipProps {
     active?: boolean;
@@ -36,7 +40,12 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 };
 
 export const StatsPage = () => {
-    const { experiences, loading } = useExperiences();
+    const { currentChild, children, setCurrentChild, loading: childLoading } = useCurrentChild();
+    const { experiences, loading: expLoading } = useExperiences({
+        childId: currentChild?.id
+    });
+    const loading = childLoading || expLoading;
+
     const [timeRange, setTimeRange] = useState('all');
 
     const filteredExperiences = useMemo(() => {
@@ -193,33 +202,52 @@ export const StatsPage = () => {
 
     return (
         <div className="p-4 space-y-6 pb-24 max-w-4xl mx-auto bg-gray-50 min-h-screen">
-            <header className="px-1 flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900">통계 리포트</h1>
-                    <p className="text-sm text-slate-400 mt-1">아이의 성장을 수치로 확인해 보세요.</p>
+            <header className="flex flex-col gap-6 px-2 pt-2">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">통계 리포트</h1>
+                        <p className="text-sm font-medium text-slate-400 mt-1">
+                            아이의 성장을 수치로 확인해 보세요
+                        </p>
+                    </div>
+                    {/* Time Range Selector as a distinct action */}
+                    <div className="relative">
+                        <select
+                            value={timeRange}
+                            onChange={(e) => setTimeRange(e.target.value)}
+                            className="appearance-none bg-indigo-50 text-indigo-700 font-bold text-xs py-2.5 pl-4 pr-8 rounded-xl outline-none focus:ring-2 focus:ring-indigo-200 cursor-pointer shadow-sm border border-indigo-100"
+                        >
+                            <option value="3m">최근 3개월</option>
+                            <option value="year">올해 전체</option>
+                            <option value="all">전체 기간</option>
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
                 </div>
-                <select
-                    value={timeRange}
-                    onChange={(e) => setTimeRange(e.target.value)}
-                    className="text-xs font-bold border-none bg-indigo-50 text-indigo-600 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-200"
-                >
-                    <option value="3m">최근 3개월</option>
-                    <option value="year">올해 전체</option>
-                    <option value="all">전체 기간</option>
-                </select>
+
+                <div className="w-full">
+                    <ChildSelector
+                        children={children}
+                        currentChild={currentChild}
+                        onSelect={setCurrentChild}
+                    />
+                </div>
             </header>
 
             <section className="px-1">
-                <div className="bg-indigo-600/5 p-4 rounded-2xl border border-indigo-100/50">
-                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
+                <div className="bg-gradient-to-br from-indigo-50/80 to-white p-5 rounded-[24px] border border-indigo-100 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <h4 className="text-[11px] font-black text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-2 relative z-10">
+                        <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
                         AI 인사이트
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2 relative z-10">
                         {insights.map((text, i) => (
-                            <p key={i} className="text-xs font-bold text-slate-600 leading-relaxed flex items-start gap-2">
-                                <span className="text-indigo-400 mt-0.5">•</span>
-                                {text}
+                            <p key={i} className="text-sm font-bold text-slate-700 leading-relaxed flex items-start gap-2.5">
+                                <span className="text-indigo-400 mt-1 shrink-0">•</span>
+                                <span>{text}</span>
                             </p>
                         ))}
                     </div>

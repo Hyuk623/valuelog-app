@@ -94,12 +94,14 @@ export const SupportPage = () => {
 
     return (
         <div className="flex-1 overflow-y-auto px-6 py-8">
-            <header className="mb-10">
-                <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4">
-                    <Mail className="w-6 h-6 text-indigo-600" />
+            <header className="mb-8">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-2xl flex items-center justify-center">
+                        <Mail className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">고객센터</h1>
                 </div>
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight">고객센터</h1>
-                <p className="text-gray-500 mt-2 font-medium">무엇을 도와드릴까요?</p>
+                <p className="text-slate-500 font-medium ml-1">무엇을 도와드릴까요?</p>
             </header>
 
             <div className="space-y-4 mb-10">
