@@ -210,6 +210,17 @@ export const NewExperiencePage = () => {
     const ageGroup = useMemo(() => getAgeGroup(currentChild?.birth_date || null), [currentChild]);
     const topicGroup = useMemo(() => getTopicGroup(tagsCategory), [tagsCategory]);
 
+    // Auto-show examples for elementary school children
+    useEffect(() => {
+        if (step === 3 && ageGroup === 'elementary' && selectedFramework?.name.includes('STARR')) {
+            const allKeys: Record<string, boolean> = {};
+            selectedFramework.schema.questions.forEach(q => {
+                allKeys[q.key] = true;
+            });
+            setShowExamples(allKeys);
+        }
+    }, [step, ageGroup, selectedFramework]);
+
     const allCompetencies = useMemo(() => Array.from(new Set([...COMPETENCY_DEFAULTS, ...competencyHistory, ...tagsCompetency])), [competencyHistory, tagsCompetency]);
     const allCategories = useMemo(() => Array.from(new Set([...CATEGORY_DEFAULTS, ...categoryHistory, ...tagsCategory])), [categoryHistory, tagsCategory]);
 
@@ -460,8 +471,8 @@ export const NewExperiencePage = () => {
                                                         type="button"
                                                         onClick={() => setShowExamples(p => ({ ...p, [q.key]: !p[q.key] }))}
                                                         className={`transition-all duration-200 flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold ${ageGroup === 'elementary'
-                                                                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                                                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                                                            ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                                            : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                                                             }`}
                                                     >
                                                         {ageGroup === 'elementary' ? (
@@ -478,8 +489,8 @@ export const NewExperiencePage = () => {
                                             {/* Example Box */}
                                             {showExamples[q.key] && (
                                                 <div className={`relative p-4 rounded-2xl animate-fadeIn ${ageGroup === 'elementary'
-                                                        ? 'bg-yellow-50 border-2 border-yellow-200 text-gray-700'
-                                                        : 'bg-indigo-50/50 border border-indigo-100 text-gray-600'
+                                                    ? 'bg-yellow-50 border-2 border-yellow-200 text-gray-700'
+                                                    : 'bg-indigo-50/50 border border-indigo-100 text-gray-600'
                                                     }`}>
                                                     {ageGroup === 'elementary' && (
                                                         <div className="absolute -top-2 left-6 w-3 h-3 bg-yellow-50 border-t-2 border-l-2 border-yellow-200 rotate-45 z-10"></div>
