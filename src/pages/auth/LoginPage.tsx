@@ -62,6 +62,10 @@ export const LoginPage = () => {
             provider,
             options: {
                 redirectTo: `${window.location.origin}/children`,
+                queryParams: {
+                    access_type: 'offline',
+                    prompt: 'consent select_account',
+                },
             },
         });
 
