@@ -20,7 +20,7 @@ export const NewExperiencePage = () => {
     const initialChildId = searchParams.get('child_id');
 
     const { children } = useChildren();
-    const { frameworks, createFramework } = useFrameworks();
+    const { frameworks, createFramework, initSystemTemplate } = useFrameworks();
     const { createExperience, updateExperience, uploadImage, activityTypes, competencyHistory, categoryHistory } = useExperiences();
 
     const [step, setStep] = useState(1); // 1: Info, 2: Template, 3: Write
@@ -57,11 +57,31 @@ export const NewExperiencePage = () => {
 
     useEffect(() => {
         if (frameworks.length > 0 && !frameworkId) {
-            const starr = frameworks.find(f => f.name.includes('STARR'));
+            // Prefer existing (real) STARR template
+            const starr = frameworks.find(f => !f.id.startsWith('virtual') && f.name.includes('STARR'));
             if (starr) setFrameworkId(starr.id);
-            else setFrameworkId(frameworks[0].id);
+            // Otherwise default to the first real one
+            else {
+                const firstReal = frameworks.find(f => !f.id.startsWith('virtual'));
+                if (firstReal) setFrameworkId(firstReal.id);
+            }
         }
     }, [frameworks, frameworkId]);
+
+    const handleFrameworkClick = async (fw: any) => {
+        if (fw.id.startsWith('virtual-')) {
+            const systemId = fw.id.replace('virtual-', '');
+            try {
+                const newFw = await initSystemTemplate(systemId);
+                if (newFw) setFrameworkId(newFw.id);
+            } catch (e) {
+                console.error('Failed to init system template', e);
+                alert('템플릿 초기화에 실패했습니다.');
+            }
+        } else {
+            setFrameworkId(fw.id);
+        }
+    };
 
     const validateStep1 = () => {
         const newErrors: Record<string, string> = {};
@@ -184,18 +204,7 @@ export const NewExperiencePage = () => {
         }
     };
 
-    const handleInitStarr = async () => {
-        try {
-            const newFw = await createFramework(
-                'STARR 회고 템플릿',
-                DEFAULT_STARR_SCHEMA
-            );
-            if (newFw) setFrameworkId(newFw.id);
-        } catch (e) {
-            console.error('Failed to init STARR', e);
-            alert('템플릿 초기화에 실패했습니다.');
-        }
-    };
+
 
     const selectedFramework = useMemo(() => frameworks.find(f => f.id === frameworkId) || null, [frameworks, frameworkId]);
     const currentChild = useMemo(() => children.find(c => c.id === childId), [children, childId]);
@@ -404,34 +413,32 @@ export const NewExperiencePage = () => {
                         <div className="space-y-6 animate-fadeIn">
                             <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3 px-1">2. 기록 템플릿 선택</h2>
                             <div className="grid gap-4">
-                                {frameworks.map(fw => (
-                                    <div
-                                        key={fw.id}
-                                        onClick={() => setFrameworkId(fw.id)}
-                                        className={`p-6 bg-white rounded-[32px] border-2 cursor-pointer transition-all duration-300 ${frameworkId === fw.id ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1' : 'border-transparent hover:border-gray-100'}`}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h3 className={`font-black text-lg ${frameworkId === fw.id ? 'text-indigo-600' : 'text-gray-900'}`}>{fw.name}</h3>
-                                                <p className="text-xs text-gray-400 mt-1 font-medium italic">{fw.description || '표준 질문으로 구성된 성찰 템플릿'}</p>
-                                            </div>
-                                            {frameworkId === fw.id && <div className="bg-indigo-600 text-white rounded-full p-1"><Check className="w-4 h-4" /></div>}
-                                        </div>
-                                    </div>
-                                ))}
-                                {!frameworks.find(f => f.name.includes('STARR')) && (
-                                    <div
-                                        onClick={handleInitStarr}
-                                        className="p-6 bg-white rounded-[32px] border-2 border-dashed border-gray-200 cursor-pointer hover:border-indigo-300 transition-all hover:bg-gray-50"
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h3 className="font-black text-lg text-gray-500">STARR 회고 템플릿 (초기화 필요)</h3>
-                                                <p className="text-xs text-gray-400 mt-1 font-medium italic">클릭하여 STARR 템플릿을 생성하고 사용합니다.</p>
+                                {frameworks.map(fw => {
+                                    const isVirtual = fw.id.startsWith('virtual-');
+                                    return (
+                                        <div
+                                            key={fw.id}
+                                            onClick={() => handleFrameworkClick(fw)}
+                                            className={`p-6 bg-white rounded-[32px] border-2 cursor-pointer transition-all duration-300 ${frameworkId === fw.id
+                                                    ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1'
+                                                    : (isVirtual ? 'border-dashed border-gray-300 hover:border-indigo-300 hover:bg-gray-50' : 'border-transparent hover:border-gray-100')
+                                                }`}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h3 className={`font-black text-lg ${frameworkId === fw.id ? 'text-indigo-600' : (isVirtual ? 'text-gray-500' : 'text-gray-900')}`}>
+                                                        {fw.name} {isVirtual && '(초기화 필요)'}
+                                                    </h3>
+                                                    <p className="text-xs text-gray-400 mt-1 font-medium italic">
+                                                        {fw.description || '표준 질문으로 구성된 성찰 템플릿'}
+                                                    </p>
+                                                    {isVirtual && <p className="text-[10px] text-indigo-400 mt-2 font-bold">클릭하여 템플릿을 생성하고 사용합니다.</p>}
+                                                </div>
+                                                {frameworkId === fw.id && <div className="bg-indigo-600 text-white rounded-full p-1"><Check className="w-4 h-4" /></div>}
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
