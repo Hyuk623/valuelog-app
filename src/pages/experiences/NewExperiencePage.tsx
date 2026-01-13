@@ -12,13 +12,15 @@ import { STARR_PRESETS } from '../../config/starrPresets';
 import type { StarrFieldKey } from '../../config/starrPresets';
 import { getAgeGroup, getTopicGroup } from '../../utils/experienceUtils';
 
+import { DEFAULT_STARR_SCHEMA } from '../../lib/constants';
+
 export const NewExperiencePage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const initialChildId = searchParams.get('child_id');
 
     const { children } = useChildren();
-    const { frameworks } = useFrameworks();
+    const { frameworks, createFramework } = useFrameworks();
     const { createExperience, updateExperience, uploadImage, activityTypes, competencyHistory, categoryHistory } = useExperiences();
 
     const [step, setStep] = useState(1); // 1: Info, 2: Template, 3: Write
@@ -179,6 +181,19 @@ export const NewExperiencePage = () => {
             formTopRef.current?.scrollIntoView({ behavior: 'smooth' });
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleInitStarr = async () => {
+        try {
+            const newFw = await createFramework(
+                'STARR 회고 템플릿',
+                DEFAULT_STARR_SCHEMA
+            );
+            if (newFw) setFrameworkId(newFw.id);
+        } catch (e) {
+            console.error('Failed to init STARR', e);
+            alert('템플릿 초기화에 실패했습니다.');
         }
     };
 
@@ -389,27 +404,33 @@ export const NewExperiencePage = () => {
                         <div className="space-y-6 animate-fadeIn">
                             <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3 px-1">2. 기록 템플릿 선택</h2>
                             <div className="grid gap-4">
-                                {frameworks.length === 0 ? (
-                                    <div className="p-8 text-center text-gray-400 bg-white rounded-[32px] border border-gray-100">
-                                        <p className="text-sm font-bold">사용 가능한 템플릿이 없습니다.</p>
-                                        <p className="text-xs mt-1">잠시 후 다시 시도해 주세요.</p>
+                                {frameworks.map(fw => (
+                                    <div
+                                        key={fw.id}
+                                        onClick={() => setFrameworkId(fw.id)}
+                                        className={`p-6 bg-white rounded-[32px] border-2 cursor-pointer transition-all duration-300 ${frameworkId === fw.id ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1' : 'border-transparent hover:border-gray-100'}`}
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className={`font-black text-lg ${frameworkId === fw.id ? 'text-indigo-600' : 'text-gray-900'}`}>{fw.name}</h3>
+                                                <p className="text-xs text-gray-400 mt-1 font-medium italic">{fw.description || '표준 질문으로 구성된 성찰 템플릿'}</p>
+                                            </div>
+                                            {frameworkId === fw.id && <div className="bg-indigo-600 text-white rounded-full p-1"><Check className="w-4 h-4" /></div>}
+                                        </div>
                                     </div>
-                                ) : (
-                                    frameworks.map(fw => (
-                                        <div
-                                            key={fw.id}
-                                            onClick={() => setFrameworkId(fw.id)}
-                                            className={`p-6 bg-white rounded-[32px] border-2 cursor-pointer transition-all duration-300 ${frameworkId === fw.id ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1' : 'border-transparent hover:border-gray-100'}`}
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h3 className={`font-black text-lg ${frameworkId === fw.id ? 'text-indigo-600' : 'text-gray-900'}`}>{fw.name}</h3>
-                                                    <p className="text-xs text-gray-400 mt-1 font-medium italic">{fw.description || '표준 질문으로 구성된 성찰 템플릿'}</p>
-                                                </div>
-                                                {frameworkId === fw.id && <div className="bg-indigo-600 text-white rounded-full p-1"><Check className="w-4 h-4" /></div>}
+                                ))}
+                                {!frameworks.find(f => f.name.includes('STARR')) && (
+                                    <div
+                                        onClick={handleInitStarr}
+                                        className="p-6 bg-white rounded-[32px] border-2 border-dashed border-gray-200 cursor-pointer hover:border-indigo-300 transition-all hover:bg-gray-50"
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="font-black text-lg text-gray-500">STARR 회고 템플릿 (초기화 필요)</h3>
+                                                <p className="text-xs text-gray-400 mt-1 font-medium italic">클릭하여 STARR 템플릿을 생성하고 사용합니다.</p>
                                             </div>
                                         </div>
-                                    ))
+                                    </div>
                                 )}
                             </div>
                         </div>
