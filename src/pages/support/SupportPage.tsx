@@ -80,7 +80,7 @@ export const SupportPage = () => {
                         Inquiry ID: {submittedId}
                     </div>
                 )}
-                <div className="text-[10px] text-gray-300 mb-4 font-mono">Ver: 1.0.3-stable</div>
+                <div className="text-[10px] text-gray-300 mb-4 font-mono">Ver: 1.0.4-release</div>
                 <Button
                     onClick={() => setIsSubmitted(false)}
                     variant="outline"
