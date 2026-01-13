@@ -12,7 +12,6 @@ import { STARR_PRESETS } from '../../config/starrPresets';
 import type { StarrFieldKey } from '../../config/starrPresets';
 import { getAgeGroup, getTopicGroup } from '../../utils/experienceUtils';
 
-import { DEFAULT_STARR_SCHEMA } from '../../lib/constants';
 
 export const NewExperiencePage = () => {
     const navigate = useNavigate();
@@ -20,7 +19,7 @@ export const NewExperiencePage = () => {
     const initialChildId = searchParams.get('child_id');
 
     const { children } = useChildren();
-    const { frameworks, createFramework, initSystemTemplate } = useFrameworks();
+    const { frameworks, initSystemTemplate } = useFrameworks();
     const { createExperience, updateExperience, uploadImage, activityTypes, competencyHistory, categoryHistory } = useExperiences();
 
     const [step, setStep] = useState(1); // 1: Info, 2: Template, 3: Write
@@ -420,8 +419,8 @@ export const NewExperiencePage = () => {
                                             key={fw.id}
                                             onClick={() => handleFrameworkClick(fw)}
                                             className={`p-6 bg-white rounded-[32px] border-2 cursor-pointer transition-all duration-300 ${frameworkId === fw.id
-                                                    ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1'
-                                                    : (isVirtual ? 'border-dashed border-gray-300 hover:border-indigo-300 hover:bg-gray-50' : 'border-transparent hover:border-gray-100')
+                                                ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1'
+                                                : (isVirtual ? 'border-dashed border-gray-300 hover:border-indigo-300 hover:bg-gray-50' : 'border-transparent hover:border-gray-100')
                                                 }`}
                                         >
                                             <div className="flex justify-between items-start">
