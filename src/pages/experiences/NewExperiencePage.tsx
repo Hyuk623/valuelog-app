@@ -456,14 +456,43 @@ export const NewExperiencePage = () => {
                                             <div className="flex items-center justify-between px-1">
                                                 <label className="text-xs font-black text-gray-500 uppercase">{preset?.label || q.label}</label>
                                                 {preset?.example && (
-                                                    <button type="button" onClick={() => setShowExamples(p => ({ ...p, [q.key]: !p[q.key] }))} className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-lg">
-                                                        {showExamples[q.key] ? 'CLOSE' : 'EXAMPLE'}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowExamples(p => ({ ...p, [q.key]: !p[q.key] }))}
+                                                        className={`transition-all duration-200 flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold ${ageGroup === 'elementary'
+                                                                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                                                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                                                            }`}
+                                                    >
+                                                        {ageGroup === 'elementary' ? (
+                                                            <>
+                                                                <span className="text-sm">💡</span>
+                                                                <span className="text-xs">{showExamples[q.key] ? '예시 닫기' : '어떻게 써야 할까요?'}</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-[10px]">{showExamples[q.key] ? 'CLOSE' : 'EXAMPLE'}</span>
+                                                        )}
                                                     </button>
                                                 )}
                                             </div>
+                                            {/* Example Box */}
                                             {showExamples[q.key] && (
-                                                <div className="p-3 bg-white border border-indigo-100 rounded-2xl text-[11px] text-gray-500 leading-relaxed shadow-sm">
-                                                    <span className="font-black text-indigo-400 mr-1">TIPS:</span> {preset?.example}
+                                                <div className={`relative p-4 rounded-2xl animate-fadeIn ${ageGroup === 'elementary'
+                                                        ? 'bg-yellow-50 border-2 border-yellow-200 text-gray-700'
+                                                        : 'bg-indigo-50/50 border border-indigo-100 text-gray-600'
+                                                    }`}>
+                                                    {ageGroup === 'elementary' && (
+                                                        <div className="absolute -top-2 left-6 w-3 h-3 bg-yellow-50 border-t-2 border-l-2 border-yellow-200 rotate-45 z-10"></div>
+                                                    )}
+                                                    <div className="flex gap-3">
+                                                        {ageGroup === 'elementary' && <span className="text-2xl select-none">🐥</span>}
+                                                        <div className="flex-1">
+                                                            {ageGroup !== 'elementary' && <span className="font-black text-indigo-400 mr-2 text-xs">TIP</span>}
+                                                            <p className={`whitespace-pre-wrap ${ageGroup === 'elementary' ? 'text-sm font-medium leading-relaxed' : 'text-xs leading-relaxed'}`}>
+                                                                {preset?.example}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )}
                                             <textarea
