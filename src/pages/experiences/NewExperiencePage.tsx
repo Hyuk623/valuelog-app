@@ -37,6 +37,8 @@ export const NewExperiencePage = () => {
     const [satisfactionScore, setSatisfactionScore] = useState<number | null>(5);
     const [tagsCompetency, setTagsCompetency] = useState<string[]>([]);
     const [tagsCategory, setTagsCategory] = useState<string[]>([]);
+    const [newCompetencyTag, setNewCompetencyTag] = useState('');
+    const [newCategoryTag, setNewCategoryTag] = useState('');
     const [showExamples, setShowExamples] = useState<Record<string, boolean>>({});
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,6 +114,28 @@ export const NewExperiencePage = () => {
         } else {
             if (!tagsCategory.includes(tag) && tagsCategory.length >= 5) return;
             setTagsCategory(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+        }
+    };
+
+    const handleAddTag = (type: 'competency' | 'category') => {
+        if (type === 'competency') {
+            const val = newCompetencyTag.trim();
+            if (!val || tagsCompetency.includes(val)) return;
+            if (tagsCompetency.length >= 8) {
+                alert('역량 태그는 최대 8개까지 가능합니다.');
+                return;
+            }
+            setTagsCompetency(prev => [...prev, val]);
+            setNewCompetencyTag('');
+        } else {
+            const val = newCategoryTag.trim();
+            if (!val || tagsCategory.includes(val)) return;
+            if (tagsCategory.length >= 5) {
+                alert('활동 분야 태그는 최대 5개까지 가능합니다.');
+                return;
+            }
+            setTagsCategory(prev => [...prev, val]);
+            setNewCategoryTag('');
         }
     };
 
@@ -290,6 +314,22 @@ export const NewExperiencePage = () => {
                                             <label className="block text-xs font-bold text-gray-500">나타난 역량 (최대 8개)</label>
                                             <span className="text-[10px] font-black text-indigo-400">{tagsCompetency.length}/8</span>
                                         </div>
+                                        <div className="flex gap-2 mb-3">
+                                            <Input
+                                                value={newCompetencyTag}
+                                                onChange={(e) => setNewCompetencyTag(e.target.value)}
+                                                placeholder="직접 입력"
+                                                className="bg-gray-50 border-gray-100 h-9 text-xs"
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddTag('competency')}
+                                            />
+                                            <Button
+                                                onClick={() => handleAddTag('competency')}
+                                                className="h-9 px-4 text-xs font-bold whitespace-nowrap"
+                                                disabled={!newCompetencyTag.trim() || tagsCompetency.length >= 8}
+                                            >
+                                                추가
+                                            </Button>
+                                        </div>
                                         <div className="flex flex-wrap gap-2">
                                             {allCompetencies.map(tag => (
                                                 <button
@@ -309,6 +349,22 @@ export const NewExperiencePage = () => {
                                         <div className="flex justify-between items-center mb-3 ml-1">
                                             <label className="block text-xs font-bold text-gray-500">활동 분야 (최대 5개)</label>
                                             <span className="text-[10px] font-black text-teal-600">{tagsCategory.length}/5</span>
+                                        </div>
+                                        <div className="flex gap-2 mb-3">
+                                            <Input
+                                                value={newCategoryTag}
+                                                onChange={(e) => setNewCategoryTag(e.target.value)}
+                                                placeholder="직접 입력"
+                                                className="bg-gray-50 border-gray-100 h-9 text-xs"
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddTag('category')}
+                                            />
+                                            <Button
+                                                onClick={() => handleAddTag('category')}
+                                                className="h-9 px-4 text-xs font-bold whitespace-nowrap bg-teal-600 hover:bg-teal-700"
+                                                disabled={!newCategoryTag.trim() || tagsCategory.length >= 5}
+                                            >
+                                                추가
+                                            </Button>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             {allCategories.map(tag => (
@@ -333,21 +389,28 @@ export const NewExperiencePage = () => {
                         <div className="space-y-6 animate-fadeIn">
                             <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3 px-1">2. 기록 템플릿 선택</h2>
                             <div className="grid gap-4">
-                                {frameworks.map(fw => (
-                                    <div
-                                        key={fw.id}
-                                        onClick={() => setFrameworkId(fw.id)}
-                                        className={`p-6 bg-white rounded-[32px] border-2 cursor-pointer transition-all duration-300 ${frameworkId === fw.id ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1' : 'border-transparent hover:border-gray-100'}`}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h3 className={`font-black text-lg ${frameworkId === fw.id ? 'text-indigo-600' : 'text-gray-900'}`}>{fw.name}</h3>
-                                                <p className="text-xs text-gray-400 mt-1 font-medium italic">{fw.description || '표준 질문으로 구성된 성찰 템플릿'}</p>
-                                            </div>
-                                            {frameworkId === fw.id && <div className="bg-indigo-600 text-white rounded-full p-1"><Check className="w-4 h-4" /></div>}
-                                        </div>
+                                {frameworks.length === 0 ? (
+                                    <div className="p-8 text-center text-gray-400 bg-white rounded-[32px] border border-gray-100">
+                                        <p className="text-sm font-bold">사용 가능한 템플릿이 없습니다.</p>
+                                        <p className="text-xs mt-1">잠시 후 다시 시도해 주세요.</p>
                                     </div>
-                                ))}
+                                ) : (
+                                    frameworks.map(fw => (
+                                        <div
+                                            key={fw.id}
+                                            onClick={() => setFrameworkId(fw.id)}
+                                            className={`p-6 bg-white rounded-[32px] border-2 cursor-pointer transition-all duration-300 ${frameworkId === fw.id ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1' : 'border-transparent hover:border-gray-100'}`}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h3 className={`font-black text-lg ${frameworkId === fw.id ? 'text-indigo-600' : 'text-gray-900'}`}>{fw.name}</h3>
+                                                    <p className="text-xs text-gray-400 mt-1 font-medium italic">{fw.description || '표준 질문으로 구성된 성찰 템플릿'}</p>
+                                                </div>
+                                                {frameworkId === fw.id && <div className="bg-indigo-600 text-white rounded-full p-1"><Check className="w-4 h-4" /></div>}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}
@@ -410,7 +473,13 @@ export const NewExperiencePage = () => {
                 {step === 2 && (
                     <div className="flex gap-3">
                         <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black" onClick={() => setStep(1)}>이전</Button>
-                        <Button className="flex-1 h-14 rounded-2xl font-black text-lg bg-gray-900" onClick={() => setStep(3)}>작성 시작하기</Button>
+                        <Button
+                            className="flex-1 h-14 rounded-2xl font-black text-lg bg-gray-900"
+                            onClick={() => setStep(3)}
+                            disabled={!frameworkId}
+                        >
+                            작성 시작하기
+                        </Button>
                     </div>
                 )}
                 {step === 3 && (
