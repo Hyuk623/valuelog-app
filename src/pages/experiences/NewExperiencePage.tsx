@@ -220,14 +220,24 @@ export const NewExperiencePage = () => {
 
     // Auto-show examples for elementary school children
     useEffect(() => {
-        if (step === 3 && ageGroup === 'elementary' && selectedFramework?.name.includes('STARR')) {
+        if (!selectedFramework) return;
+        if (step === 3 && ageGroup === 'elementary') {
             const allKeys: Record<string, boolean> = {};
+            const isStarrFramework = selectedFramework.name.includes('STARR');
             selectedFramework.schema.questions.forEach(q => {
-                allKeys[q.key] = true;
+                const presetExample = isStarrFramework
+                    ? STARR_PRESETS[ageGroup][topicGroup][q.key as StarrFieldKey]?.example
+                    : undefined;
+                const fallbackExample = q.key in DEFAULT_STARR_EXAMPLES
+                    ? DEFAULT_STARR_EXAMPLES[q.key as StarrFieldKey]
+                    : undefined;
+                if (presetExample || fallbackExample) {
+                    allKeys[q.key] = true;
+                }
             });
             setShowExamples(allKeys);
         }
-    }, [step, ageGroup, selectedFramework]);
+    }, [step, ageGroup, selectedFramework, topicGroup]);
 
     const allCompetencies = useMemo(() => Array.from(new Set([...COMPETENCY_DEFAULTS, ...competencyHistory, ...tagsCompetency])), [competencyHistory, tagsCompetency]);
     const allCategories = useMemo(() => Array.from(new Set([...CATEGORY_DEFAULTS, ...categoryHistory, ...tagsCategory])), [categoryHistory, tagsCategory]);
@@ -468,7 +478,10 @@ export const NewExperiencePage = () => {
                                 {selectedFramework.schema.questions.map((q) => {
                                     const isStarr = selectedFramework.name.includes('STARR');
                                     const preset = isStarr ? STARR_PRESETS[ageGroup][topicGroup][q.key as StarrFieldKey] : null;
-                                    const fallbackExample = isStarr ? DEFAULT_STARR_EXAMPLES[q.key as StarrFieldKey] : undefined;
+                                    const hasFallbackKey = q.key in DEFAULT_STARR_EXAMPLES;
+                                    const fallbackExample = hasFallbackKey
+                                        ? DEFAULT_STARR_EXAMPLES[q.key as StarrFieldKey]
+                                        : undefined;
                                     const exampleText = preset?.example || fallbackExample;
                                     const value = (responses[q.key] || '') as string;
                                     const fieldError = errors[q.key];
