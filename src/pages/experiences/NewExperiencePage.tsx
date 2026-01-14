@@ -459,9 +459,26 @@ export const NewExperiencePage = () => {
                             <div className="space-y-6">
                                 {selectedFramework.schema.questions.map((q) => {
                                     const isStarr = selectedFramework.name.includes('STARR');
-                                    const preset = isStarr ? STARR_PRESETS[ageGroup][topicGroup][q.key as StarrFieldKey] : null;
+                                    // Try to find the specific preset, otherwise fall back to default/generic for STARR
+                                    const preset = isStarr
+                                        ? (STARR_PRESETS[ageGroup]?.[topicGroup]?.[q.key as StarrFieldKey]
+                                            || STARR_PRESETS['default']['generic'][q.key as StarrFieldKey])
+                                        : null;
+
                                     const value = (responses[q.key] || '') as string;
                                     const fieldError = errors[q.key];
+
+                                    // Topic-based Animal Icons for Elementary
+                                    const getAnimalIcon = () => {
+                                        switch (topicGroup) {
+                                            case 'art': return '🦜'; // Parrot
+                                            case 'science': return '🦉'; // Owl
+                                            case 'sports': return '🐯'; // Tiger
+                                            case 'career': return '🦁'; // Lion
+                                            default: return '🐥'; // Chick
+                                        }
+                                    };
+
                                     return (
                                         <div key={q.key} className="space-y-2">
                                             <div className="flex items-center justify-between px-1">
@@ -477,8 +494,8 @@ export const NewExperiencePage = () => {
                                                     >
                                                         {ageGroup === 'elementary' ? (
                                                             <>
-                                                                <span className="text-sm">💡</span>
-                                                                <span className="text-xs">{showExamples[q.key] ? '예시 닫기' : '어떻게 써야 할까요?'}</span>
+                                                                <span className="text-sm">{getAnimalIcon()}</span>
+                                                                <span className="text-xs">{showExamples[q.key] ? '설명 닫기' : '도움말 보기'}</span>
                                                             </>
                                                         ) : (
                                                             <span className="text-[10px]">{showExamples[q.key] ? 'CLOSE' : 'EXAMPLE'}</span>
@@ -486,7 +503,8 @@ export const NewExperiencePage = () => {
                                                     </button>
                                                 )}
                                             </div>
-                                            {/* Example Box */}
+
+                                            {/* Example / Guide Box */}
                                             {showExamples[q.key] && (
                                                 <div className={`relative p-4 rounded-2xl animate-fadeIn ${ageGroup === 'elementary'
                                                     ? 'bg-yellow-50 border-2 border-yellow-200 text-gray-700'
@@ -496,7 +514,7 @@ export const NewExperiencePage = () => {
                                                         <div className="absolute -top-2 left-6 w-3 h-3 bg-yellow-50 border-t-2 border-l-2 border-yellow-200 rotate-45 z-10"></div>
                                                     )}
                                                     <div className="flex gap-3">
-                                                        {ageGroup === 'elementary' && <span className="text-2xl select-none">🐥</span>}
+                                                        {ageGroup === 'elementary' && <span className="text-2xl select-none">{getAnimalIcon()}</span>}
                                                         <div className="flex-1">
                                                             {ageGroup !== 'elementary' && <span className="font-black text-indigo-400 mr-2 text-xs">TIP</span>}
                                                             <p className={`whitespace-pre-wrap ${ageGroup === 'elementary' ? 'text-sm font-medium leading-relaxed' : 'text-xs leading-relaxed'}`}>
@@ -506,11 +524,12 @@ export const NewExperiencePage = () => {
                                                     </div>
                                                 </div>
                                             )}
+
                                             <textarea
                                                 className={`w-full bg-white border rounded-2xl p-4 text-sm font-medium focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 outline-none transition-all placeholder:text-gray-300 min-h-[140px] resize-none ${fieldError ? 'border-red-300' : 'border-gray-100'}`}
                                                 value={value}
                                                 onChange={(e) => setResponses({ ...responses, [q.key]: e.target.value })}
-                                                placeholder={preset?.placeholder || q.label}
+                                                placeholder={preset ? `${preset.placeholder}\n\n(예시: ${preset.example})` : q.label}
                                             />
                                             <div className="flex justify-between px-1 items-center">
                                                 {fieldError ? (
@@ -558,6 +577,6 @@ export const NewExperiencePage = () => {
                     </div>
                 )}
             </footer>
-        </div>
+        </div >
     );
 };
