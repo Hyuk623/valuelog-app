@@ -217,11 +217,24 @@ export const NewExperiencePage = () => {
         if (!selectedFramework) return;
         if (step === 3 && ageGroup === 'elementary') {
             const allKeys: Record<string, boolean> = {};
-            const isStarrFramework = selectedFramework.name.includes('STARR');
+            const isStarrFramework = selectedFramework.name.toUpperCase().includes('STARR');
             selectedFramework.schema.questions.forEach(q => {
+                let effectiveKey = q.key;
+                const upperKey = q.key.toUpperCase();
+                if (['S', 'T', 'A', 'R', 'R2'].includes(upperKey)) {
+                    effectiveKey = upperKey;
+                } else if (isStarrFramework) {
+                    const label = q.label.toUpperCase();
+                    if (label.startsWith('S')) effectiveKey = 'S';
+                    else if (label.startsWith('T')) effectiveKey = 'T';
+                    else if (label.startsWith('A')) effectiveKey = 'A';
+                    else if (label.startsWith('R2') || label.includes('R2')) effectiveKey = 'R2';
+                    else if (label.startsWith('R')) effectiveKey = 'R';
+                }
+
                 const preset = isStarrFramework
-                    ? (STARR_PRESETS[ageGroup]?.[topicGroup]?.[q.key as StarrFieldKey]
-                        || STARR_PRESETS['default']['generic'][q.key as StarrFieldKey])
+                    ? (STARR_PRESETS[ageGroup]?.[topicGroup]?.[effectiveKey as StarrFieldKey]
+                        || STARR_PRESETS['default']['generic'][effectiveKey as StarrFieldKey])
                     : null;
 
                 if (preset?.example) {
@@ -469,11 +482,27 @@ export const NewExperiencePage = () => {
                             <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3 px-1">3. {selectedFramework.name} 작성</h2>
                             <div className="space-y-6">
                                 {selectedFramework.schema.questions.map((q) => {
-                                    const isStarr = selectedFramework.name.includes('STARR');
+                                    const isStarr = selectedFramework.name.toUpperCase().includes('STARR');
+
+                                    // Normalize key to handle case differences or infer from label (e.g., "S - ...")
+                                    let effectiveKey = q.key;
+                                    const upperKey = q.key.toUpperCase();
+                                    if (['S', 'T', 'A', 'R', 'R2'].includes(upperKey)) {
+                                        effectiveKey = upperKey;
+                                    } else if (isStarr) {
+                                        // Fallback: Infer from label if key is obscure (e.g. "question1")
+                                        const label = q.label.toUpperCase();
+                                        if (label.startsWith('S')) effectiveKey = 'S';
+                                        else if (label.startsWith('T')) effectiveKey = 'T';
+                                        else if (label.startsWith('A')) effectiveKey = 'A';
+                                        else if (label.startsWith('R2') || label.includes('R2')) effectiveKey = 'R2';
+                                        else if (label.startsWith('R')) effectiveKey = 'R';
+                                    }
+
                                     // Try to find the specific preset, otherwise fall back to default/generic for STARR
                                     const preset = isStarr
-                                        ? (STARR_PRESETS[ageGroup]?.[topicGroup]?.[q.key as StarrFieldKey]
-                                            || STARR_PRESETS['default']['generic'][q.key as StarrFieldKey])
+                                        ? (STARR_PRESETS[ageGroup]?.[topicGroup]?.[effectiveKey as StarrFieldKey]
+                                            || STARR_PRESETS['default']['generic'][effectiveKey as StarrFieldKey])
                                         : null;
                                     const value = (responses[q.key] || '') as string;
                                     const fieldError = errors[q.key];
