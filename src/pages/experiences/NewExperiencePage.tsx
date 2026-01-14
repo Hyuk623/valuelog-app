@@ -13,6 +13,8 @@ import type { StarrFieldKey } from '../../config/starrPresets';
 import { getAgeGroup, getTopicGroup } from '../../utils/experienceUtils';
 
 
+
+
 export const NewExperiencePage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -212,14 +214,23 @@ export const NewExperiencePage = () => {
 
     // Auto-show examples for elementary school children
     useEffect(() => {
-        if (step === 3 && ageGroup === 'elementary' && selectedFramework?.name.includes('STARR')) {
+        if (!selectedFramework) return;
+        if (step === 3 && ageGroup === 'elementary') {
             const allKeys: Record<string, boolean> = {};
+            const isStarrFramework = selectedFramework.name.includes('STARR');
             selectedFramework.schema.questions.forEach(q => {
-                allKeys[q.key] = true;
+                const preset = isStarrFramework
+                    ? (STARR_PRESETS[ageGroup]?.[topicGroup]?.[q.key as StarrFieldKey]
+                        || STARR_PRESETS['default']['generic'][q.key as StarrFieldKey])
+                    : null;
+
+                if (preset?.example) {
+                    allKeys[q.key] = true;
+                }
             });
             setShowExamples(allKeys);
         }
-    }, [step, ageGroup, selectedFramework]);
+    }, [step, ageGroup, selectedFramework, topicGroup]);
 
     const allCompetencies = useMemo(() => Array.from(new Set([...COMPETENCY_DEFAULTS, ...competencyHistory, ...tagsCompetency])), [competencyHistory, tagsCompetency]);
     const allCategories = useMemo(() => Array.from(new Set([...CATEGORY_DEFAULTS, ...categoryHistory, ...tagsCategory])), [categoryHistory, tagsCategory]);
@@ -464,7 +475,6 @@ export const NewExperiencePage = () => {
                                         ? (STARR_PRESETS[ageGroup]?.[topicGroup]?.[q.key as StarrFieldKey]
                                             || STARR_PRESETS['default']['generic'][q.key as StarrFieldKey])
                                         : null;
-
                                     const value = (responses[q.key] || '') as string;
                                     const fieldError = errors[q.key];
 
