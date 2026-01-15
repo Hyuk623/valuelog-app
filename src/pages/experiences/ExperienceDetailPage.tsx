@@ -46,24 +46,46 @@ export const CopyButton = ({ text }: { text: string }) => {
     );
 };
 
-// [HELPER] cleanSentence - Escaped special characters for safety
-const cleanSentence = (raw?: any): string => {
-    if (raw === undefined || raw === null) return "";
-    const str = String(raw).trim();
-    if (!str) return "";
-    // 제거: . ! ? \u2026 (ellipsis) " ' \u201d (smart quote) \u2019 (smart quote)
-    return str.replace(/[.!?\u2026]+$/g, "").replace(/["'\u201d\u2019]+$/g, "").trim();
+// [HELPER] ensurePeriod - Ensures sentence ends with punctuation
+const ensurePeriod = (str?: any): string => {
+    const s = String(str || "").trim();
+    if (!s) return "";
+    return s.match(/[.!?]$/) ? s : s + ".";
+};
+
+// [HELPER] convertToNounEnding - Simple heuristic to convert Korean sentence endings to noun form
+const convertToNounEnding = (str?: any): string => {
+    let s = String(str || "").trim();
+    if (!s) return "";
+    s = s.replace(/[.!?]+$/, ""); // Remove period for processing
+
+    const endings = [
+        ['했습니다', '함'], ['았습니다', '았음'], ['었습니다', '었음'],
+        ['합니다', '함'], ['입니다', '임'],
+        ['였다', '였음'], ['했다', '했음'], ['이다', '임'],
+        ['된다', '됨'], ['한다', '함'], ['본다', '봄'],
+        ['준다', '줌'], ['싶다', '싶음'], ['있다', '있음'],
+        ['없다', '없음'], ['같다', '같음'], ['습니다', '음']
+    ];
+
+    for (const [from, to] of endings) {
+        if (s.endsWith(from)) {
+            return s.slice(0, -from.length) + to;
+        }
+    }
+    return s;
 };
 
 // [LOGIC] generateNarrative
 const generateNarrative = (exp: Experience) => {
     const { date, title, responses, tags_category, tags_competency, satisfaction_score } = exp;
     const res = (responses || {}) as any;
-    const s = cleanSentence(res['S']);
-    const t = cleanSentence(res['T']);
-    const a = cleanSentence(res['A']);
-    const r = cleanSentence(res['R']);
-    const r2 = cleanSentence(res['R2']);
+
+    const s = ensurePeriod(res['S']);
+    const t = ensurePeriod(res['T']);
+    const a = ensurePeriod(res['A']);
+    const r = ensurePeriod(res['R']);
+    const r2 = ensurePeriod(res['R2']);
 
     const hasStarr = !!(s || t || a || r || r2);
 
@@ -82,62 +104,40 @@ const generateNarrative = (exp: Experience) => {
     }
 
     let text = `나는 ${date || '최근'}에 '${title}' 활동에 참여했다.`;
-    if (s || t) {
-        text += " 이번 활동을 통해";
-        if (s) text += ` ${s} 상황에서`;
-        if (t) text += ` '${t}'라는 목표를 달성하고자 노력했다.`;
-        else text += " 구체적인 목표를 세워 실천했다.";
-    }
-    if (a) text += ` 특히 ${a}와(과) 같은 구체적인 행동을 직접 수행하며 적극적으로 임했다.`;
-    if (r) text += ` 그 결과 ${r} 성과를 거둘 수 있었다.`;
-    if (r2) text += ` 이 소중한 경험을 통해 ${r2} 점을 깊이 깨달으며 한 단계 더 성장할 수 있었다.`;
-    return text;
+
+    if (s) text += ` ${s}`;
+    if (t) text += ` 당시 ${t}`;
+    if (a) text += ` 이를 위해 ${a}`;
+    if (r) text += ` 그 결과 ${r}`;
+    if (r2) text += ` 이 경험을 통해 ${r2}`;
+
+    return text.replace(/\s+/g, " ").trim();
 };
 
 // [LOGIC] generateSummary
 const generateSummary = (exp: Experience) => {
-    const { title, responses, tags_competency } = exp;
+    const { title, responses } = exp;
     const res = (responses || {}) as any;
 
-    const s = cleanSentence(res['S']);
-    const a = cleanSentence(res['A']);
-    const r = cleanSentence(res['R']);
-    const r2 = cleanSentence(res['R2']);
-    const titleClean = cleanSentence(title);
+    const s = convertToNounEnding(res['S']);
+    const t = convertToNounEnding(res['T']);
+    const a = convertToNounEnding(res['A']);
+    const r = convertToNounEnding(res['R']);
+    const r2 = convertToNounEnding(res['R2']);
 
-    // 핵심 역량: 최대 3개 선택하여 join
-    const comps = (Array.isArray(tags_competency) ? tags_competency : []).map(t => cleanSentence(t)).filter(Boolean);
-    const compPhrase = comps.slice(0, 3).length > 0
-        ? `${comps.slice(0, 3).join(", ")} 역량을`
-        : "핵심 역량을";
+    const parts: string[] = [];
 
-    // 1. 활동/상황 구성
-    let situationPart = "";
-    if (s && s.length > 5) {
-        situationPart = `${s} 과정에서`;
-    } else if (titleClean) {
-        situationPart = `${titleClean} 활동에서`;
-    } else {
-        situationPart = "이번 활동을 통해";
-    }
+    // Title
+    if (title) parts.push(`[${title}] 활동 수행.`);
 
-    // 2. 행동 및 결과/배움 압축
-    let actionResultPart = "";
+    // STARR
+    if (s) parts.push(`${s}.`);
+    if (t) parts.push(`${t}.`);
+    if (a) parts.push(`구체적으로 ${a}.`);
+    if (r) parts.push(`그 결과 ${r}.`);
+    if (r2) parts.push(`${r2}.`);
 
-    if (a && (r || r2)) {
-        const outcome = r || r2;
-        actionResultPart = `${a}을(를) 주도적으로 수행하며 ${compPhrase} 강화하였고, 그 결과 ${outcome} 성과를 거둔 의미 있는 경험임.`;
-    } else if (a) {
-        actionResultPart = `${a}을(를) 직접 계획하고 실행하며 ${compPhrase} 집중적으로 키운 과정임.`;
-    } else if (r || r2) {
-        const outcome = r || r2;
-        actionResultPart = `적극적인 참여를 통해 ${compPhrase} 발휘하였으며, ${outcome} 점을 깊이 체감한 성장형 경험임.`;
-    } else {
-        actionResultPart = `성실한 태도로 임하며 ${compPhrase} 기르고 성취감을 맛본 유의미한 시간이었음.`;
-    }
-
-    const final = `${situationPart} ${actionResultPart}`;
-    return final.replace(/\s+/g, " ").trim();
+    return parts.join(" ");
 };
 
 /**

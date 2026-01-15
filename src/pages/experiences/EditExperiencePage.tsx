@@ -344,6 +344,7 @@ export const EditExperiencePage = () => {
                                                 )}
 
                                                 <textarea
+                                                    value={responses[key] || ''}
                                                     onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setResponses({ ...responses, [key]: e.target.value })}
                                                     placeholder={q.placeholder}
                                                     className="w-full rounded-2xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-3 px-4 bg-gray-50/50 min-h-[100px] border resize-none transition-all focus:bg-white"
