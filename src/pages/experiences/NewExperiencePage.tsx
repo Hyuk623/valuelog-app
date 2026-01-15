@@ -499,11 +499,25 @@ export const NewExperiencePage = () => {
                                         else if (label.startsWith('R')) effectiveKey = 'R';
                                     }
 
-                                    // Try to find the specific preset, otherwise fall back to default/generic for STARR
-                                    const preset = isStarr
+                                    // Resolve Presets:
+                                    // 1. Generic Preset: Used for Label & Placeholder (to unify questions across categories)
+                                    const genericPreset = isStarr
+                                        ? (STARR_PRESETS[ageGroup]?.['generic']?.[effectiveKey as StarrFieldKey]
+                                            || STARR_PRESETS['default']['generic'][effectiveKey as StarrFieldKey])
+                                        : null;
+
+                                    // 2. Specific Preset: Used for Examples (to keep category-specific context)
+                                    const topicPreset = isStarr
                                         ? (STARR_PRESETS[ageGroup]?.[topicGroup]?.[effectiveKey as StarrFieldKey]
                                             || STARR_PRESETS['default']['generic'][effectiveKey as StarrFieldKey])
                                         : null;
+
+                                    // Merge for display: Use Generic for Question, Specific for Example
+                                    const preset = isStarr && genericPreset && topicPreset ? {
+                                        label: genericPreset.label,
+                                        placeholder: genericPreset.placeholder,
+                                        example: topicPreset.example,
+                                    } : null;
                                     const value = (responses[q.key] || '') as string;
                                     const fieldError = errors[q.key];
 
