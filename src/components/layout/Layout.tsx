@@ -40,6 +40,9 @@ const Layout = () => {
                 </header>
                 <div className="flex-1 overflow-y-auto">
                     <Outlet />
+                    <footer className="py-8 text-center text-[10px] text-gray-300">
+                        <p>© 2026 ValueLog. All rights reserved.</p>
+                    </footer>
                 </div>
 
                 {/* Bottom Navigation */}
