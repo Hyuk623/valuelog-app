@@ -41,3 +41,11 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 - [x] 커스텀 회고 템플릿 (기본 STARR 자동 생성)
 - [x] 경험 기록 (동적 질문지 반영)
 - [x] 통계 차트 (예시)
+
+## ⚖️ 라이선스 및 저작권 (License & Copyright)
+
+이 프로젝트의 모든 소스 코드와 자산은 **Copyright (c) 2026 ValueLog**에게 저작권이 있습니다.
+허가 없는 무단 복제, 배포, 수정 및 상업적 사용을 금지합니다.
+
+All rights reserved. This project is proprietary software.
+Unauthorized copying code, via any medium, is strictly prohibited.
