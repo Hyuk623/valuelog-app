@@ -8,9 +8,15 @@ export function useAuth() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
+        supabase.auth.getSession().then(({ data: { session }, error }: { data: { session: Session | null }, error: any }) => {
+            if (error) {
+                console.error('[ValueLog Auth] Session check failed:', error);
+            }
             setSession(session);
             setUser(session?.user ?? null);
+            setLoading(false);
+        }).catch((err: any) => {
+            console.error('[ValueLog Auth] Unexpected session error:', err);
             setLoading(false);
         });
 
