@@ -2,18 +2,16 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useChildren } from '../../hooks/useChildren';
-import { useFrameworks } from '../../hooks/useFrameworks';
+// import { useFrameworks } from '../../hooks/useFrameworks'; // Removed
 import { useExperiences } from '../../hooks/useExperiences';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
-import { ArrowLeft, Image as ImageIcon, X, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, X, AlertCircle } from 'lucide-react';
 import { STARR_PRESETS } from '../../config/starrPresets';
 import type { StarrFieldKey } from '../../config/starrPresets';
 import { getAgeGroup, getTopicGroup } from '../../utils/experienceUtils';
-
-
-
+import { SYSTEM_TEMPLATES } from '../../config/systemTemplates';
 
 export const NewExperiencePage = () => {
     const navigate = useNavigate();
@@ -21,10 +19,13 @@ export const NewExperiencePage = () => {
     const initialChildId = searchParams.get('child_id');
 
     const { children } = useChildren();
-    const { frameworks, initSystemTemplate } = useFrameworks();
+    // const { frameworks, initSystemTemplate } = useFrameworks(); // Removed
     const { createExperience, updateExperience, uploadImage, activityTypes, competencyHistory, categoryHistory } = useExperiences();
 
-    const [step, setStep] = useState(1); // 1: Info, 2: Template, 3: Write
+    // Fixed Framework ID
+    const FIXED_FRAMEWORK_ID = 'system-starr';
+
+    const [step, setStep] = useState(1); // 1: Info, 3: Write (Step 2 is skipped)
 
     // Form State
     const [childId, setChildId] = useState(initialChildId || '');
@@ -34,7 +35,10 @@ export const NewExperiencePage = () => {
     const [location, setLocation] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [frameworkId, setFrameworkId] = useState('');
+
+    // Always use System STARR
+    const frameworkId = FIXED_FRAMEWORK_ID;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [responses, setResponses] = useState<Record<string, any>>({});
     const [satisfactionScore, setSatisfactionScore] = useState<number | null>(5);
@@ -55,34 +59,6 @@ export const NewExperiencePage = () => {
         if (initialChildId) setChildId(initialChildId);
         else if (children.length > 0 && !childId) setChildId(children[0].id);
     }, [children, initialChildId, childId]);
-
-    useEffect(() => {
-        if (frameworks.length > 0 && !frameworkId) {
-            // Prefer existing (real) STARR template
-            const starr = frameworks.find(f => !f.id.startsWith('virtual') && f.name.includes('STARR'));
-            if (starr) setFrameworkId(starr.id);
-            // Otherwise default to the first real one
-            else {
-                const firstReal = frameworks.find(f => !f.id.startsWith('virtual'));
-                if (firstReal) setFrameworkId(firstReal.id);
-            }
-        }
-    }, [frameworks, frameworkId]);
-
-    const handleFrameworkClick = async (fw: any) => {
-        if (fw.id.startsWith('virtual-')) {
-            const systemId = fw.id.replace('virtual-', '');
-            try {
-                const newFw = await initSystemTemplate(systemId);
-                if (newFw) setFrameworkId(newFw.id);
-            } catch (e) {
-                console.error('Failed to init system template', e);
-                alert('템플릿 초기화에 실패했습니다.');
-            }
-        } else {
-            setFrameworkId(fw.id);
-        }
-    };
 
     const validateStep1 = () => {
         const newErrors: Record<string, string> = {};
@@ -171,15 +147,19 @@ export const NewExperiencePage = () => {
 
         setIsSubmitting(true);
         try {
-            const selectedFramework = frameworks.find(f => f.id === frameworkId);
+            // Future-proofing Note:
+            // Currently, we send `null` for the default system template ('system-starr') to avoid
+            // potential Foreign Key constraint errors if the DB expects a UUID for framework_id.
+            // In the future, for new System Templates (e.g. 'system-free-writing'), valid UUID entries 
+            // should be created in the `frameworks` table, or the DB schema should allow string IDs.
             const record = await createExperience({
                 child_id: childId,
                 title: title.trim(),
                 date,
                 activity_type: activityType.trim() || null,
                 location: location.trim() || null,
-                framework_id: frameworkId,
-                framework_version: selectedFramework?.version || 1,
+                framework_id: null, // Defaulting to null for 'system-starr'
+                framework_version: 1,
                 responses,
                 tags_category: tagsCategory,
                 tags_competency: tagsCompetency,
@@ -196,7 +176,12 @@ export const NewExperiencePage = () => {
                     alert('기록은 저장되었으나 이미지 업로드에 실패했습니다. (나중에 수정 가능)');
                 }
             }
-            navigate('/experiences');
+            // Navigate to the detail page with a success state
+            if (record) {
+                navigate(`/experiences/${record.id}`, { state: { isNew: true } });
+            } else {
+                navigate('/experiences');
+            }
         } catch (e) {
             setErrors({ submit: (e as Error).message });
             formTopRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -205,9 +190,10 @@ export const NewExperiencePage = () => {
         }
     };
 
-
-
-    const selectedFramework = useMemo(() => frameworks.find(f => f.id === frameworkId) || null, [frameworks, frameworkId]);
+    const selectedFramework = useMemo(() =>
+        SYSTEM_TEMPLATES.find(f => f.id === frameworkId) || null,
+        [frameworkId]
+    );
     const currentChild = useMemo(() => children.find(c => c.id === childId), [children, childId]);
     const ageGroup = useMemo(() => getAgeGroup(currentChild?.birth_date || null), [currentChild]);
     const topicGroup = useMemo(() => getTopicGroup(tagsCategory), [tagsCategory]);
@@ -258,7 +244,7 @@ export const NewExperiencePage = () => {
                     <h1 className="text-lg font-black text-gray-900 leading-tight">새 경험 기록</h1>
                     <div className="flex gap-1 mt-1.5 px-0.5">
                         <div className={`h-1 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-indigo-600' : 'bg-gray-200'}`} />
-                        <div className={`h-1 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-indigo-600' : 'bg-gray-200'}`} />
+                        {/* Step 2 Skipped visually but keeping logic simple */}
                         <div className={`h-1 flex-1 rounded-full transition-colors ${step >= 3 ? 'bg-indigo-600' : 'bg-gray-200'}`} />
                     </div>
                 </div>
@@ -281,7 +267,7 @@ export const NewExperiencePage = () => {
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">아이 선택</label>
                                         <select
-                                            className={`block w-full rounded-xl border-gray-100 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-3 border appearance-none outline-none ${errors.childId ? 'border-red-300' : ''}`}
+                                            className={`block w-full rounded-xl border-gray-100 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-50 text-sm p-3 border appearance-none outline-none ${errors.childId ? 'border-red-300' : ''}`}
                                             value={childId}
                                             onChange={(e) => setChildId(e.target.value)}
                                         >
@@ -442,44 +428,11 @@ export const NewExperiencePage = () => {
                             </section>
                         </div>
                     )}
-
-                    {step === 2 && (
-                        <div className="space-y-6 animate-fadeIn">
-                            <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3 px-1">2. 기록 템플릿 선택</h2>
-                            <div className="grid gap-4">
-                                {frameworks.map(fw => {
-                                    const isVirtual = fw.id.startsWith('virtual-');
-                                    return (
-                                        <div
-                                            key={fw.id}
-                                            onClick={() => handleFrameworkClick(fw)}
-                                            className={`p-6 bg-white rounded-[32px] border-2 cursor-pointer transition-all duration-300 ${frameworkId === fw.id
-                                                ? 'border-indigo-600 shadow-xl shadow-indigo-50 -translate-y-1'
-                                                : (isVirtual ? 'border-dashed border-gray-300 hover:border-indigo-300 hover:bg-gray-50' : 'border-transparent hover:border-gray-100')
-                                                }`}
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h3 className={`font-black text-lg ${frameworkId === fw.id ? 'text-indigo-600' : (isVirtual ? 'text-gray-500' : 'text-gray-900')}`}>
-                                                        {fw.name} {isVirtual && '(초기화 필요)'}
-                                                    </h3>
-                                                    <p className="text-xs text-gray-400 mt-1 font-medium italic">
-                                                        {fw.description || '표준 질문으로 구성된 성찰 템플릿'}
-                                                    </p>
-                                                    {isVirtual && <p className="text-[10px] text-indigo-400 mt-2 font-bold">클릭하여 템플릿을 생성하고 사용합니다.</p>}
-                                                </div>
-                                                {frameworkId === fw.id && <div className="bg-indigo-600 text-white rounded-full p-1"><Check className="w-4 h-4" /></div>}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
+                    {/* Step 2 is removed */}
 
                     {step === 3 && selectedFramework && (
                         <div className="space-y-6 animate-fadeIn">
-                            <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3 px-1">3. {selectedFramework.name} 작성</h2>
+                            <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3 px-1">2. 기록 작성 ({selectedFramework.name})</h2>
                             <div className="space-y-6">
                                 {selectedFramework.schema.questions.map((q) => {
                                     const isStarr = selectedFramework.name.toUpperCase().includes('STARR');
@@ -607,23 +560,12 @@ export const NewExperiencePage = () => {
 
             <footer className="p-4 pb-24 bg-white/80 backdrop-blur-md border-t border-gray-100 sticky bottom-0">
                 {step === 1 && (
-                    <Button fullWidth onClick={() => validateStep1() && setStep(2)} className="h-14 rounded-2xl font-black text-lg shadow-lg shadow-indigo-50">다음 단계로</Button>
+                    <Button fullWidth onClick={() => validateStep1() && setStep(3)} className="h-14 rounded-2xl font-black text-lg shadow-lg shadow-indigo-50">다음 단계로</Button>
                 )}
-                {step === 2 && (
-                    <div className="flex gap-3">
-                        <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black" onClick={() => setStep(1)}>이전</Button>
-                        <Button
-                            className="flex-1 h-14 rounded-2xl font-black text-lg bg-gray-900"
-                            onClick={() => setStep(3)}
-                            disabled={!frameworkId}
-                        >
-                            작성 시작하기
-                        </Button>
-                    </div>
-                )}
+
                 {step === 3 && (
                     <div className="flex gap-3">
-                        <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black" onClick={() => setStep(2)}>이전</Button>
+                        <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black" onClick={() => setStep(1)}>이전</Button>
                         <Button className="flex-1 h-14 rounded-2xl font-black text-lg" disabled={isSubmitting} onClick={handleSubmit}>
                             {isSubmitting ? '저장 중...' : '기록 완료하기'}
                         </Button>

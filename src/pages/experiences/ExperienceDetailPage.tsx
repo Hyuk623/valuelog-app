@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { ConversationOverlay } from '../../components/experiences/ConversationOverlay';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import { SYSTEM_TEMPLATES } from '../../config/systemTemplates';
 import type { Experience, Framework } from '../../types/models';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { ArrowLeft, Calendar, MapPin, Tag, Copy, Check as CheckIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Tag, Copy, Check as CheckIcon, Trash2, PartyPopper } from 'lucide-react';
 import { useExperiences } from '../../hooks/useExperiences';
 
 /**
@@ -146,10 +148,22 @@ const generateSummary = (exp: Experience) => {
 export const ExperienceDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
+    const isNew = location.state?.isNew as boolean;
+
     const [experience, setExperience] = useState<Experience | null>(null);
     const [framework, setFramework] = useState<Framework | null>(null);
     const [loading, setLoading] = useState(true);
-    const { deleteExperience } = useExperiences();
+    const [showConversation, setShowConversation] = useState(false);
+
+    // Fetch all experiences to show related items
+    const { deleteExperience, experiences: allExperiences } = useExperiences({ minimal: true });
+
+    // Calculate related experiences (exclude current, same child, max 3)
+    const relatedExperiences = allExperiences
+        .filter(e => e.id !== id && e.child_id === experience?.child_id)
+        .slice(0, 3);
+
 
     useEffect(() => {
         async function load() {
@@ -171,14 +185,40 @@ export const ExperienceDetailPage = () => {
                 const exp = data as unknown as Experience;
                 setExperience(exp);
 
-                if (exp.framework_id) {
+                // Framework Resolution Strategy:
+                // 1. Check System Templates (Memory) first for known IDs or default fallback
+                // 2. Then check Database for custom/user templates
+                let resolvedFramework: Framework | null = null;
+                const fwId = exp.framework_id;
+
+                // A. Check Memory (System Templates)
+                // Handle 'system-starr' explicitly, or fallback to it if ID is null (legacy default)
+                const systemTemplate = SYSTEM_TEMPLATES.find(t =>
+                    t.id === fwId || (!fwId && t.id === 'system-starr')
+                );
+
+                if (systemTemplate) {
+                    resolvedFramework = {
+                        id: systemTemplate.id,
+                        user_id: 'system',
+                        name: systemTemplate.name,
+                        description: systemTemplate.description,
+                        version: systemTemplate.version,
+                        schema: systemTemplate.schema,
+                        created_at: new Date().toISOString()
+                    };
+                }
+                // B. Fetch from DB if not a system template
+                else if (fwId) {
                     const { data: fw } = await supabase
                         .from('frameworks')
                         .select('*')
-                        .eq('id', exp.framework_id)
+                        .eq('id', fwId)
                         .single();
-                    if (fw) setFramework(fw as Framework);
+                    if (fw) resolvedFramework = fw as Framework;
                 }
+
+                setFramework(resolvedFramework);
             } catch (err) {
                 console.error('Data loading error:', err);
             } finally {
@@ -193,12 +233,47 @@ export const ExperienceDetailPage = () => {
 
     return (
         <div className="p-4 space-y-4 pb-24 bg-gray-50 min-h-screen">
-            <header className="flex items-center gap-2 mb-4">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-600">
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
-                <span className="font-black text-gray-900">기록 상세</span>
+            {isNew && (
+                <div className="mb-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[24px] p-6 text-white shadow-xl shadow-indigo-200 relative overflow-hidden animate-fadeIn">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <div className="relative z-10 text-center">
+                        <div className="inline-flex items-center justify-center p-3 bg-white/20 rounded-full mb-3 backdrop-blur-sm animate-bounce">
+                            <PartyPopper className="w-8 h-8 text-yellow-300" />
+                        </div>
+                        <h2 className="text-2xl font-black mb-1">기록 완료!</h2>
+                        <p className="text-indigo-100 text-sm font-medium">
+                            아이의 멋진 성장이 기록되었어요.<br />
+                            하단에서 <span className="text-yellow-300 font-bold border-b border-yellow-300/50">자동 생성된 포트폴리오</span>를 확인해보세요!
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {showConversation && experience && (
+                <ConversationOverlay
+                    experience={experience}
+                    onClose={() => setShowConversation(false)}
+                />
+            )}
+
+            <header className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-600">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <span className="font-black text-gray-900">기록 상세</span>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowConversation(true)}
+                    className="text-xs font-bold text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-100 rounded-xl"
+                >
+                    <PartyPopper className="w-3.5 h-3.5 mr-1.5" />
+                    아이와 함께 보기
+                </Button>
             </header>
+
 
             <div className="space-y-4">
                 {experience.image_url && (
@@ -291,7 +366,42 @@ export const ExperienceDetailPage = () => {
                 </Card>
             </section>
 
+            {relatedExperiences.length > 0 && (
+                <section className="pt-8 border-t border-gray-200/50">
+                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 px-1">
+                        이 아이의 다른 경험들
+                    </h3>
+                    <div className="space-y-3">
+                        {relatedExperiences.map(item => (
+                            <div
+                                key={item.id}
+                                onClick={() => navigate(`/experiences/${item.id}`)}
+                                className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                            >
+                                <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden shrink-0 relative">
+                                    {item.image_url ? (
+                                        <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+                                            <Calendar className="w-5 h-5" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h4 className="font-bold text-gray-800 text-sm truncate">{item.title}</h4>
+                                    <p className="text-xs text-gray-400 mt-0.5">{item.date}</p>
+                                </div>
+                                <div className="mr-2">
+                                    <ArrowLeft className="w-4 h-4 text-gray-300 rotate-180" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
             <div className="flex justify-end gap-3 pt-8">
+
                 <Button
                     variant="outline"
                     className="flex-1 h-12 text-red-500 border-red-100 hover:bg-red-50 rounded-2xl font-bold"
